@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#111827">
+    <meta name="description" content="Générateur et scanner de QR Code">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" href="/static/icons/icon-192.png">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <title>QR CODE</title>
+</head>
+<body>
+
+<header>
+    <div class="header-content">
+        <div class="logo">
+            <div class="logo-icon">QR</div>
+            <span>QR CODE</span>
+        </div>
+        <div class="status">Générateur & scanner</div>
+    </div>
+</header>
+
+<section class="ad-zone">
+    <div class="ad" id="adContainer">
+        <span id="adPlaceholder">Espace publicitaire</span>
+    </div>
+</section>
+
+<main>
+    <section class="hero">
+        <h1>QR Code</h1>
+        <p>Générez ou scannez un QR Code rapidement.</p>
+    </section>
+
+    <section class="qr-card">
+        <div class="tabs">
+            <button class="tab active" data-panel="generator">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="7" height="7"/>
+                    <rect x="14" y="3" width="7" height="7"/>
+                    <rect x="3" y="14" width="7" height="7"/>
+                    <path d="M14 14h3v3h-3zM18 18h3v3h-3zM14 18h2"/>
+                </svg>
+                Générer
+            </button>
+
+            <button class="tab" data-panel="scanner">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 7V5a2 2 0 0 1 2-2h2"/>
+                    <path d="M17 3h2a2 2 0 0 1 2 2v2"/>
+                    <path d="M21 17v2a2 2 0 0 1-2 2h-2"/>
+                    <path d="M7 21H5a2 2 0 0 1-2-2v-2"/>
+                    <path d="M7 12h10"/>
+                </svg>
+                Scanner
+            </button>
+        </div>
+
+        <div id="generator" class="panel active">
+            <h2>Générer un QR Code</h2>
+            <p class="panel-description">
+                Entrez un texte, une URL ou une information pour créer votre QR Code.
+            </p>
+
+            <textarea id="qrText" placeholder="https://exemple.com"></textarea>
+
+            <button class="button" id="generateBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="7" height="7"/>
+                    <rect x="14" y="3" width="7" height="7"/>
+                    <rect x="3" y="14" width="7" height="7"/>
+                    <path d="M14 14h3v3h-3zM18 18h3v3h-3z"/>
+                </svg>
+                Générer le QR Code
+            </button>
+
+            <div id="qrResult" class="qr-result">
+                <img id="qrImage" alt="QR Code généré">
+                <button class="button download-button" id="downloadBtn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 3v12"/>
+                        <path d="m7 10 5 5 5-5"/>
+                        <path d="M5 21h14"/>
+                    </svg>
+                    Télécharger
+                </button>
+            </div>
+        </div>
+
+        <div id="scanner" class="panel">
+            <h2>Scanner un QR Code</h2>
+            <p class="panel-description">
+                Choisissez une méthode pour scanner votre QR Code.
+            </p>
+
+            <div class="scanner-options">
+                <button class="scanner-option" id="cameraBtn">
+                    <div class="scanner-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 7h3l2-2h6l2 2h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2z"/>
+                            <circle cx="12" cy="13" r="3"/>
+                        </svg>
+                    </div>
+                    <strong>Ouvrir caméra</strong>
+                    <span>Scanner avec votre caméra</span>
+                </button>
+
+                <button class="scanner-option" id="fileBtn">
+                    <div class="scanner-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 4h10l6 6v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/>
+                            <path d="M14 4v6h6"/>
+                            <path d="M8 15h8"/>
+                            <path d="M8 18h5"/>
+                        </svg>
+                    </div>
+                    <strong>Fichier</strong>
+                    <span>Sélectionner une image QR</span>
+                </button>
+            </div>
+
+            <input type="file" id="fileInput" accept="image/*">
+
+            <div id="cameraArea" class="camera-area hidden">
+                <video id="cameraVideo" playsinline></video>
+                <div class="camera-controls">
+                    <button class="button secondary-button" id="stopCameraBtn">Fermer la caméra</button>
+                </div>
+                <p id="scanStatus" class="scan-status">Recherche d'un QR Code…</p>
+            </div>
+
+            <div id="scanResult" class="scan-result hidden">
+                <strong>QR Code détecté</strong>
+                <div id="scanValue"></div>
+                <button class="button secondary-button" id="copyScanBtn">Copier le résultat</button>
+            </div>
+        </div>
+    </section>
+</main>
+
+<footer>
+    <p>© 2026 QR CODE · <strong>By DEKAL HOUSE</strong></p>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+<script src="/static/js/app.js"></script>
+</body>
+</html>

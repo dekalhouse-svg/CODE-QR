@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#6d28d9">
+    <title>Administration · QR CODE</title>
+    <style>
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{font-family:Arial,sans-serif;background:#f6f5fa;color:#21142f}
+        header{background:#fff;border-bottom:1px solid #e9d5ff;padding:16px 20px}
+        .head{max-width:1150px;margin:auto;display:flex;justify-content:space-between;align-items:center;gap:15px}
+        .brand{font-weight:800;color:#6d28d9}
+        .logout{color:#6d28d9;text-decoration:none;font-size:14px;font-weight:700}
+        main{max-width:1150px;margin:auto;padding:28px 20px 50px}
+        h1{margin-bottom:8px}
+        .subtitle{color:#6b7280;margin-bottom:25px}
+        .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:15px;margin-bottom:25px}
+        .stat{background:#fff;border:1px solid #eadcff;border-radius:14px;padding:20px}
+        .stat small{color:#6b7280;display:block;margin-bottom:8px}
+        .stat strong{font-size:28px}
+        .grid{display:grid;grid-template-columns:1fr 1.3fr;gap:20px}
+        .card{background:#fff;border:1px solid #eadcff;border-radius:16px;padding:20px}
+        .card h2{font-size:19px;margin-bottom:16px}
+        label{display:block;font-size:13px;font-weight:700;margin:13px 0 7px}
+        input[type=text],input[type=number],input[type=file]{width:100%;padding:11px;border:1px solid #d8b4fe;border-radius:9px}
+        .check{display:flex;align-items:center;gap:8px;margin-top:13px;font-size:13px}
+        .check input{width:auto}
+        button{border:0;border-radius:9px;padding:11px 14px;background:#6d28d9;color:#fff;font-weight:700;cursor:pointer}
+        .upload{width:100%;margin-top:17px}
+        .message{margin-top:12px;font-size:13px}
+        .ad-row{border:1px solid #ede9fe;border-radius:12px;padding:13px;margin-bottom:10px}
+        .ad-top{display:flex;justify-content:space-between;gap:10px}
+        .ad-name{font-weight:700;overflow:hidden;text-overflow:ellipsis}
+        .badge{font-size:11px;padding:4px 7px;border-radius:20px;background:#dcfce7;color:#166534;white-space:nowrap}
+        .badge.off{background:#f3f4f6;color:#6b7280}
+        .meta{font-size:12px;color:#6b7280;margin:7px 0}
+        .actions{display:flex;gap:7px;flex-wrap:wrap}
+        .secondary{background:#ede9fe;color:#4c1d95}
+        .danger{background:#fee2e2;color:#b91c1c}
+        @media(max-width:850px){.stats{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:1fr}}
+        @media(max-width:500px){.stats{grid-template-columns:1fr 1fr}.stat strong{font-size:22px}.head{align-items:flex-start}}
+    </style>
+</head>
+<body>
+<header>
+    <div class="head">
+        <div>
+            <div class="brand">QR CODE · ADMIN</div>
+            <small>Gestion de l'application</small>
+        </div>
+        <a class="logout" href="/admin/logout">Déconnexion</a>
+    </div>
+</header>
+
+<main>
+    <h1>Tableau de bord</h1>
+    <p class="subtitle">Statistiques, publicités et contrôle de la partie publique.</p>
+
+    <section class="stats">
+        <div class="stat"><small>Visiteurs</small><strong id="visitors">0</strong></div>
+        <div class="stat"><small>QR générés</small><strong id="qrGenerated">0</strong></div>
+        <div class="stat"><small>Publicités actives</small><strong id="activeAds">0</strong></div>
+        <div class="stat"><small>Total publicités</small><strong id="totalAds">0</strong></div>
+    </section>
+
+    <section class="grid">
+        <div class="card">
+            <h2>Ajouter une publicité</h2>
+
+            <label for="adFile">Image ou vidéo</label>
+            <input id="adFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif,video/mp4,video/webm,video/quicktime">
+
+            <label for="durationDays">Durée de la publicité (jours)</label>
+            <input id="durationDays" type="number" min="1" max="3650" value="7">
+
+            <label for="displaySeconds">Durée d'affichage (secondes)</label>
+            <input id="displaySeconds" type="number" min="1" max="120" value="5">
+
+            <label class="check">
+                <input id="active" type="checkbox" checked>
+                Publicité active immédiatement
+            </label>
+
+            <button class="upload" id="uploadBtn">Ajouter la publicité</button>
+            <div class="message" id="message"></div>
+        </div>
+
+        <div class="card">
+            <h2>Publicités</h2>
+            <div id="adsList">Chargement…</div>
+        </div>
+    </section>
+</main>
+
+<script>
+async function loadStats() {
+    const response = await fetch("/api/admin/stats", {cache:"no-store"});
+    if (!response.ok) return;
+    const data = await response.json();
+
+    document.getElementById("visitors").textContent = data.visitors;
+    document.getElementById("qrGenerated").textContent = data.qr_generated;
+    document.getElementById("activeAds").textContent = data.active_ads;
+    document.getElementById("totalAds").textContent = data.total_ads;
+}
+
+function escapeHtml(value) {
+    return String(value).replace(/[&<>"']/g, char => ({
+        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+    }[char]));
+}
+
+async function loadAds() {
+    const response = await fetch("/api/admin/ads", {cache:"no-store"});
+    if (!response.ok) return;
+
+    const ads = await response.json();
+    const list = document.getElementById("adsList");
+
+    if (!ads.length) {
+        list.innerHTML = "<p style='color:#6b7280;font-size:13px'>Aucune publicité.</p>";
+        return;
+    }
+
+    list.innerHTML = ads.map(ad => `
+        <div class="ad-row">
+            <div class="ad-top">
+                <div class="ad-name">${escapeHtml(ad.original_name)}</div>
+                <span class="badge ${ad.active ? "" : "off"}">
+                    ${ad.active ? "Active" : "Inactive"}
+                </span>
+            </div>
+
+            <div class="meta">
+                ${ad.media_type} · ${ad.duration_days} jour(s) ·
+                ${ad.display_seconds} seconde(s) par affichage
+            </div>
+
+            <div class="actions">
+                <button class="secondary" onclick="toggleAd(${ad.id}, ${!ad.active})">
+                    ${ad.active ? "Désactiver" : "Activer"}
+                </button>
+
+                <button class="secondary" onclick="changeDisplay(${ad.id}, ${ad.display_seconds})">
+                    Durée affichage
+                </button>
+
+                <button class="danger" onclick="deleteAd(${ad.id})">
+                    Supprimer
+                </button>
+            </div>
+        </div>
+    `).join("");
+}
+
+async function toggleAd(id, active) {
+    await fetch(`/api/admin/ads/${id}`, {
+        method:"PATCH",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({active})
+    });
+    await refresh();
+}
+
+async function changeDisplay(id, current) {
+    const value = prompt("Durée d'affichage en secondes (1 à 120) :", current);
+    if (value === null) return;
+
+    await fetch(`/api/admin/ads/${id}`, {
+        method:"PATCH",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({display_seconds:Number(value)})
+    });
+
+    await refresh();
+}
+
+async function deleteAd(id) {
+    if (!confirm("Supprimer cette publicité ?")) return;
+
+    await fetch(`/api/admin/ads/${id}`, {method:"DELETE"});
+    await refresh();
+}
+
+document.getElementById("uploadBtn").addEventListener("click", async () => {
+    const file = document.getElementById("adFile").files[0];
+
+    if (!file) {
+        document.getElementById("message").textContent = "Choisissez un fichier.";
+        return;
+    }
+
+    const form = new FormData();
+    form.append("file", file);
+    form.append("duration_days", document.getElementById("durationDays").value);
+    form.append("display_seconds", document.getElementById("displaySeconds").value);
+    form.append("active", document.getElementById("active").checked ? "1" : "0");
+
+    const button = document.getElementById("uploadBtn");
+    button.disabled = true;
+    button.textContent = "Ajout…";
+
+    try {
+        const response = await fetch("/api/admin/ads", {
+            method:"POST",
+            body:form
+        });
+
+        const data = await response.json();
+
+        document.getElementById("message").textContent =
+            response.ok ? "Publicité ajoutée." : (data.error || "Erreur.");
+
+        if (response.ok) {
+            document.getElementById("adFile").value = "";
+            await refresh();
+        }
+    } finally {
+        button.disabled = false;
+        button.textContent = "Ajouter la publicité";
+    }
+});
+
+async function refresh() {
+    await loadStats();
+    await loadAds();
+}
+
+refresh();
+setInterval(loadStats, 10000);
+</script>
+</body>
+</html>

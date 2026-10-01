@@ -1,0 +1,6 @@
+__pycache__/
+*.py[cod]
+*.db
+.env
+admin/uploads/*
+!admin/uploads/.gitkeep
